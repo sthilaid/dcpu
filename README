@@ -14,9 +14,10 @@ The details of the architecture: http://0x10c.com/doc/dcpu-16.txt
 TODO list:
 
 - implement a "debugger" to help see if things seems okay or not...
-- implement some unit tests for the dcpu package write a compiler that
-- has a backend to dcpu (or use an existing one, and just modify the
-- backend)
+- implement a mnemonic to assembly parser
+- implement some unit tests for the dcpu package
+- write a compiler that has a backend to dcpu (or use an existing one,
+  and just modify the backend)
 - ...
 - ...
 - rule the galaxy :)
