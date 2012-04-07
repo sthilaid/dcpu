@@ -36,3 +36,7 @@ Thumbs.db
 # Emacs backups #
 #################
 *~
+
+# ignoring test pkg #
+#####################
+test
