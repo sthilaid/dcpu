@@ -13,8 +13,11 @@ The details of the architecture: http://0x10c.com/doc/dcpu-16.txt
 
 TODO list:
 
+- implement tests and benchmarks to validate the implementation a bit
 - implement a "debugger" to help see if things seems okay or not...
 - implement a mnemonic to assembly parser
+- implement a real 100 mHz implmentation (now not capped in speed) to
+  conform processor spec
 - implement some unit tests for the dcpu package
 - write a compiler that has a backend to dcpu (or use an existing one,
   and just modify the backend)
