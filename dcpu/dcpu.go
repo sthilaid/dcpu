@@ -3,10 +3,10 @@ package dcpu
 import "fmt"
 
 type Word uint16
-
 type memory [0x10000]Word
-
 type registers [8]Word
+
+// facilitates access to the registers
 const (
 	A = iota
 	B = iota
@@ -17,12 +17,6 @@ const (
 	I = iota
 	J = iota
 )
-
-func (reg *registers) init() {
-	for i, _ := range reg {
-		reg[i] = 0x0
-	}
-}
 
 type DCPU struct {
 	reg registers
@@ -36,23 +30,13 @@ type DCPU struct {
 
 type opcodeFun func (a,b *Word, cpu *DCPU)
 
-func (cpu *DCPU) read(address Word) *Word {
-	// todo wait 1 cycle
-	debugf(highdebug, "reading: %x => %x (@ %x)", address, cpu.mem[address], &cpu.mem[address])
-	return &cpu.mem[address]
-}
+// ----------------------------------------------------------------------------
+// dcpu Initialization
 
-func (cpu *DCPU) Loadprogram(program []Word) {
-	if len(program) > len(cpu.mem) {
-		panic("program doesn't fit in dcpu memory space...");
+func (reg *registers) init() {
+	for i, _ := range reg {
+		reg[i] = 0x0
 	}
-
-	// load the program into memory
-	for i, inst := range program {
-	 	cpu.mem[i] = inst
-	}
-
-	debugf(lowdebug, "after loading program: %s", cpu.MemDump(5))
 }
 
 func (cpu *DCPU) Init() {
@@ -62,6 +46,9 @@ func (cpu *DCPU) Init() {
 	cpu.o = 0x0
 	cpu.stopFlag = false
 }
+
+// ----------------------------------------------------------------------------
+// instructions implementation
 
 // 0x00-0x07: register (A, B, C, X, Y, Z, I or J, in that order)
 // 0x08-0x0f: [register]
@@ -78,6 +65,12 @@ func (cpu *DCPU) Init() {
 func (cpu *DCPU) getRegister(exp Word) *Word {
 	debugf(highdebug, "getting regiester: %x", exp & 0x7)
 	return &cpu.reg[exp & 0x7]
+}
+
+func (cpu *DCPU) read(address Word) *Word {
+	// todo wait 1 cycle
+	debugf(highdebug, "reading: %x => %x (@ %x)", address, cpu.mem[address], &cpu.mem[address])
+	return &cpu.mem[address]
 }
 
 func (cpu *DCPU) nextWord() *Word {
@@ -277,6 +270,21 @@ func (cpu *DCPU) apply(op Word, a, b *Word) {
 	opcodeTable[op](a,b,cpu)
 }
 
+// ----------------------------------------------------------------------------
+// dcpu management
+
+func (cpu *DCPU) Loadprogram(program []Word) {
+	if len(program) > len(cpu.mem) {
+		panic("program doesn't fit in dcpu memory space...");
+	}
+
+	// load the program into memory
+	for i, inst := range program {
+	 	cpu.mem[i] = inst
+	}
+
+	debugf(lowdebug, "after loading program: %s", cpu.MemDump(5))
+}
 
 func (cpu *DCPU) Step() {
 	// these are just used if litteral expression are given, since
