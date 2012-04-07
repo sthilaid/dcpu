@@ -1,0 +1,24 @@
+
+*******************************************************************************
+*
+* DCPU emulator by David St-Hilaire (Twitter: @SourjiroSeta_)
+*
+*******************************************************************************
+
+I'm trying to put togheter a dcpu emulator for the fun of learning Go
+and the dcpu architecture. This processor was invented by Markus
+"notch" Persson when working on his 2nd game for Mojan, 0x10c
+
+The details of the architecture: http://0x10c.com/doc/dcpu-16.txt
+
+TODO list:
+
+- implement a "debugger" to help see if things seems okay or not...
+- implement some unit tests for the dcpu package write a compiler that
+- has a backend to dcpu (or use an existing one, and just modify the
+- backend)
+- ...
+- ...
+- rule the galaxy :)
+
+Cheers!
