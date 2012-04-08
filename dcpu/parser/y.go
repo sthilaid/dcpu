@@ -1,14 +1,15 @@
 
 //line dcpuAssembly.y:2
-package dcpu
+package parser
 
 import "fmt"
+import "dcpu"
 
-type DCPUnative []Word
+type DCPUnative []dcpu.Word
 
 var dcpuLexerReturnValue DCPUnative = DCPUnative{}
 
-//line dcpuAssembly.y:17
+//line dcpuAssembly.y:18
 type yySymType struct {
 	yys int
 	vvar string
@@ -331,7 +332,7 @@ yydefault:
 	switch yynt {
 
 	case 3:
-		//line dcpuAssembly.y:26
+		//line dcpuAssembly.y:27
 		{
 	  println("testing!")
 	  dcpuLexerReturnValue = append(dcpuLexerReturnValue, 0xF0F0)
