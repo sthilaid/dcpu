@@ -2,6 +2,7 @@ package dcpu
 
 import "testing"
 
+// tests setting register A and also "next word litteral"
 func TestSetRegister0(t *testing.T) {
 	cpu := new(DCPU)
 	cpu.Init()
@@ -42,3 +43,20 @@ func BenchmarkSetRegister(b *testing.B) {
 	}
 }
 
+// tests setting register X, litteral values, reading register X back
+func TestReadRegister0(t *testing.T) {
+	cpu := new(DCPU)
+	cpu.Init()
+	// SET X, 0x3 ; 7c01 0030
+	// SET Y, [X] ; 81c1
+	cpu.Loadprogram([]Word{0x7c01, 0x0030, 0x81c1})
+	cpu.Step()
+	cpu.Step()
+	if cpu.reg[A] != 0x30 {
+		t.Errorf("Simple test 1 failed: cpu.reg[A]: %x != 0x30", cpu.reg[A])
+	}
+
+	if cpu.pc != 0 {
+		t.Errorf("Simple test 1 failed: cpu.pc = %x != 0", cpu.pc)
+	}
+}

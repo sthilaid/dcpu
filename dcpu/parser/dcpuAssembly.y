@@ -1,9 +1,10 @@
 %{
-package dcpu
+package parser
 
 import "fmt"
+import "dcpu"
 
-type DCPUnative []Word
+type DCPUnative []dcpu.Word
 
 var dcpuLexerReturnValue DCPUnative = DCPUnative{}
 %}
