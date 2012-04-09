@@ -9,6 +9,10 @@ import "dcpu"
 // program description
 //--------------------
 
+type DcpuComparable interface {
+	IsEqualTo(comp DcpuComparable) (isEqual bool, errStr string)
+}
+
 type DcpuProgram struct {
 	expressions []DcpuExpression
 	labels map[DcpuLabel]byte
@@ -42,6 +46,18 @@ func (prog DcpuProgram)String() string {
 	return str + "}\n"
 }
 
+func (prog DcpuProgram)IsEqualTo(prog1 DcpuProgram) (bool, string) {
+	if len(prog.expressions) != len(prog1.expressions) {
+		return false, "Programs are not of same length!"
+	}
+	for i,expr := range prog.expressions {
+		if equal,err := expr.IsEqualTo(prog1.expressions[i]) ; !equal {
+			return false, fmt.Sprintf("expressions %d are not equal: %s", i, err)
+		}
+	}
+	return true, ""
+}
+
 //-----------------------
 // Expression description
 //-----------------------
@@ -70,6 +86,17 @@ func (exp DcpuExpression)Size(prog DcpuProgram) byte {
 
 func (exp DcpuExpression)String() string {
 	return string(exp.inst) +" "+ exp.a.String() +", "+ exp.b.String()
+}
+
+func (expr DcpuExpression)IsEqualTo(expr1 DcpuExpression) (bool, string) {
+	if (expr.inst != expr1.inst) {
+		return false, fmt.Sprintf("Instructions are different (%s, %s)", expr.inst, expr1.inst)
+	} else if equal, str := expr.a.IsEqualTo(expr1.a) ; !equal {
+		return false, fmt.Sprintf("'a' operands are different (%s)", str)
+	} else if equal, str := expr.b.IsEqualTo(expr1.b) ; !equal {
+		return false, fmt.Sprintf("'b' operands are different (%s)", str)
+	}
+	return true, ""
 }
 
 //*****************************************************************************
@@ -112,6 +139,7 @@ type DcpuOperand interface {
 	Code(prog DcpuProgram) []dcpu.Word
 	Size(prog DcpuProgram) byte
 	String() string
+	IsEqualTo(op DcpuComparable) (isEqual bool, errStr string)
 }
 
 //---------------------------
@@ -123,6 +151,7 @@ type DcpuReference struct {
 		ReferenceCode(prog DcpuProgram) []dcpu.Word
 		ReferenceSize(prog DcpuProgram) byte
 		String() string
+		IsEqualTo(ref DcpuComparable) (bool,string)
 	}
 }
 func (refNode DcpuReference)Code(prog DcpuProgram) []dcpu.Word {
@@ -136,6 +165,16 @@ func (refNode DcpuReference)Size(prog DcpuProgram) byte {
 func (refNode DcpuReference)String() string {
 	return refNode.ref.String()
 }
+
+func (refNode DcpuReference)IsEqualTo(op DcpuComparable) (bool, string) {
+	if ref1, ok := op.(DcpuReference) ; !ok {
+		return false, fmt.Sprintf("different types of operands (%s, %s)", refNode, op)
+	} else if equal, err := refNode.ref.IsEqualTo(ref1.ref) ; !equal {
+		return false, fmt.Sprintf("Incompabible references: %s", err)
+	}
+	return true, ""
+}
+
 
 //---------------------------
 // register node description
@@ -167,6 +206,15 @@ func (reg DcpuRegister) ReferenceSize(prog DcpuProgram) byte {
 
 func (reg DcpuRegister) String() string {
 	return string(reg)
+}
+
+func (reg DcpuRegister) IsEqualTo(op DcpuComparable) (bool,string) {
+	if reg1, ok := op.(DcpuRegister) ; !ok {
+		return false, fmt.Sprintf("different types of operands (%s, %s)", reg, op)
+	} else if reg != reg1 {
+		return false, fmt.Sprintf("Different registers (%s, %s)", reg, reg1)
+	}
+	return true, ""
 }
 
 //--------------------------------
@@ -208,6 +256,15 @@ func (lit DcpuLitteral)String() string {
 	return fmt.Sprintf("0x%x", uint16(lit))
 }
 
+func (lit DcpuLitteral)IsEqualTo(op DcpuComparable) (bool,string) {
+	if lit1, ok := op.(DcpuLitteral) ; !ok {
+		return false, fmt.Sprintf("different types of operands (%s, %s)", lit, op)
+	} else if lit != lit1 {
+		return false, fmt.Sprintf("different litteral values (%p, %p)", lit, lit1)
+	}
+	return true, ""
+}
+
 //--------------------------------
 // sum regerence node description
 //--------------------------------
@@ -230,6 +287,17 @@ func (sum DcpuSum)String() string {
 	return sum.lit.String() +" + "+ sum.reg.String()
 }
 
+func (sum DcpuSum)IsEqualTo(op DcpuComparable) (bool,string) {
+	if sum1, ok := op.(DcpuSum) ; !ok {
+		return false, fmt.Sprintf("different types of operands (%s, %s)", sum, op)
+	} else if equal, err := sum.reg.IsEqualTo(sum1.reg) ; !equal {
+		return false, fmt.Sprintf("sum registers are different: %s", err)
+	} else if equal, err := sum.lit.IsEqualTo(sum1.lit) ; !equal {
+		return false, fmt.Sprintf("sum litterals are different: %s", err)
+	}
+	return true, ""
+}
+
 //--------------------------------
 // label node description
 //--------------------------------
@@ -250,4 +318,13 @@ func (label DcpuLabel)Size(prog DcpuProgram) byte {
 
 func (label DcpuLabel)String() string {
 	return string(label)
+}
+
+func (label DcpuLabel)IsEqualTo(op DcpuComparable) (bool,string) {
+	if label1, ok := op.(DcpuLabel) ; !ok {
+		return false, fmt.Sprintf("different types of operands (%s, %s)", label, op)
+	} else if label != label1 {
+		return false, fmt.Sprintf("different labels (%s, %s)", label, label1)
+	}
+	return true, ""
 }

@@ -27,3 +27,26 @@ func TestParsing0(t *testing.T) {
 		}
 	}
 }
+
+/*
+func TestParsing1(t *testing.T) {
+	lex := new(DCPULex)
+	lex.code = "ADD [0xAAAA], 0xFF00 SET PUSH, [0xAAAA]"
+	yyParse(lex)
+
+	var expr0 DcpuExpression
+	var expr1 DcpuExpression
+	var ref0 DcpuReference
+
+	expr0.inst = DcpuInstruction("ADD")
+	ref0 = DcpuLitteral(0xaaaa)
+	expr0.a = ref0
+	expr0.b = DcpuLitteral(0xff00)
+
+	expr1.inst = DcpuInstruction("SET")
+	//...
+	
+	ast := new(DcpuProgram)
+	ast.expressions = []DcpuExpression{expr0, expr1}
+}
+*/
