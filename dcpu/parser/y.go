@@ -1,19 +1,22 @@
 
-//line dcpuAssembly.y:2
+//line dcpuAssembly.y:3
 package parser
 
 import "fmt"
-import "dcpu"
 
-type DCPUnative []dcpu.Word
+var ParsedProgram DcpuProgram
 
-var dcpuLexerReturnValue DCPUnative = DCPUnative{}
-
-//line dcpuAssembly.y:18
+//line dcpuAssembly.y:21
 type yySymType struct {
 	yys int
-	vvar string
-	num uint16
+	expr DcpuExpression
+	inst DcpuInstruction
+	reg DcpuRegister
+	lab DcpuLabel
+	lit DcpuLitteral
+	operand DcpuOperand
+	ref DcpuReference
+	sum DcpuSum
 }
 
 const instruction = 57346
@@ -331,11 +334,90 @@ yydefault:
 	// dummy call; replaced with literal code
 	switch yynt {
 
-	case 3:
-		//line dcpuAssembly.y:27
+	case 1:
+		//line dcpuAssembly.y:35
 		{
-	  println("testing!")
-	  dcpuLexerReturnValue = append(dcpuLexerReturnValue, 0xF0F0)
+		ParsedProgram.expressions = append(ParsedProgram.expressions, yyS[yypt-0].expr)
+	}
+	case 2:
+		//line dcpuAssembly.y:40
+		{
+		ParsedProgram.expressions = append(ParsedProgram.expressions, yyS[yypt-1].expr, yyS[yypt-0].expr)
+	}
+	case 3:
+		//line dcpuAssembly.y:45
+		{
+		expr := new(DcpuExpression)
+		expr.inst = yyS[yypt-3].inst
+		expr.a = yyS[yypt-2].operand
+		expr.b = yyS[yypt-0].operand
+		expr.label = ""
+		yyVAL.expr = *expr
+	}
+	case 4:
+		//line dcpuAssembly.y:55
+		{
+		expr := new(DcpuExpression)
+		expr.inst = yyS[yypt-3].inst
+		expr.a = yyS[yypt-2].operand
+		expr.b = yyS[yypt-0].operand
+		expr.label = yyS[yypt-4].lab
+		yyVAL.expr = *expr
+	
+	}
+	case 5:
+		//line dcpuAssembly.y:66
+		{
+		yyVAL.operand = DcpuRegister(yyS[yypt-0].reg)
+	}
+	case 6:
+		//line dcpuAssembly.y:70
+		{
+		yyVAL.operand = yyS[yypt-0].ref
+	}
+	case 7:
+		//line dcpuAssembly.y:74
+		{
+		yyVAL.operand = DcpuLitteral(yyS[yypt-0].lit)
+	}
+	case 8:
+		//line dcpuAssembly.y:78
+		{
+		yyVAL.operand = DcpuLabel(yyS[yypt-0].lab)
+	}
+	case 9:
+		//line dcpuAssembly.y:83
+		{
+		yyVAL.ref = yyS[yypt-1].ref
+	}
+	case 10:
+		//line dcpuAssembly.y:88
+		{
+		reference := new (DcpuReference)
+		reference.ref = yyS[yypt-0].reg
+		yyVAL.ref = *reference
+	}
+	case 11:
+		//line dcpuAssembly.y:94
+		{
+		reference := new (DcpuReference)
+		reference.ref = yyS[yypt-0].sum
+		yyVAL.ref = *reference
+	}
+	case 12:
+		//line dcpuAssembly.y:100
+		{
+		reference := new (DcpuReference)
+		reference.ref = yyS[yypt-0].lit
+		yyVAL.ref = *reference
+	}
+	case 13:
+		//line dcpuAssembly.y:106
+		{
+		sum := new(DcpuSum)
+		sum.lit = yyS[yypt-2].lit
+		sum.reg = yyS[yypt-0].reg
+		yyVAL.sum = *sum
 	}
 	}
 	goto yystack /* stack new state and value */

@@ -3,12 +3,19 @@ package parser
 import "fmt"
 import "strconv"
 
+var debugActivated bool = false
+func debugf(fmtstr string, args ...interface{}) {
+	if debugActivated {
+		fmt.Printf(fmtstr, args...)
+	}
+}
+
 func isAlpha(r byte) bool {
 	return r >= 'A' && r <= 'z'
 }
 
 func isDigit(r byte) bool {
-	fmt.Printf("isDigit '%c' >= '0': %t, '%c' <= '9': %t\n", r, (r >= '0'), r, (r <= '9'))
+	debugf("isDigit '%c' >= '0': %t, '%c' <= '9': %t\n", r, (r >= '0'), r, (r <= '9'))
 	return r >= '0' && r <= '9'
 }
 
@@ -17,7 +24,6 @@ type DCPULex struct {
 	index int
 	currentRune byte
 	code string
-	prog DCPUnative
 	initialized bool
 }
 
@@ -29,7 +35,7 @@ func (lex *DCPULex) nextLetter() byte {
 		
 		lex.currentRune = lex.code[lex.index] ;
 		lex.index++ ;
-		fmt.Printf("lex nextLetter: '%c'\n", lex.currentRune)
+		debugf("lex nextLetter: '%c'\n", lex.currentRune)
 		return lex.currentRune
 	}
 	panic ("shouldnt occur in nextLetter")
@@ -44,7 +50,7 @@ func (lex *DCPULex) getRune() byte {
 }
 
 func (lex *DCPULex) findSym(yylval *yySymType) int {
-	fmt.Printf("FindSym\n")
+	debugf("FindSym\n")
 	r := lex.getRune()
 	var symbol string = "";
 	for isAlpha(r) {
@@ -52,7 +58,7 @@ func (lex *DCPULex) findSym(yylval *yySymType) int {
 		r = lex.nextLetter()
 	}
 
-	fmt.Printf("symbol: %s\n", symbol)
+	debugf("symbol: %s\n", symbol)
 
 	switch symbol {
 	case "A": fallthrough
@@ -63,8 +69,8 @@ func (lex *DCPULex) findSym(yylval *yySymType) int {
 	case "Z": fallthrough
 	case "I": fallthrough
 	case "J": 
-		yylval.vvar = symbol;
-		fmt.Printf("lex: found register %s\n", symbol)
+		yylval.reg = DcpuRegister(symbol);
+		debugf("lex: found register %s\n", symbol)
 		return register
 	case "SET": fallthrough
 	case "ADD": fallthrough
@@ -81,8 +87,8 @@ func (lex *DCPULex) findSym(yylval *yySymType) int {
 	case "IFN": fallthrough
 	case "IFG": fallthrough
 	case "IFB":
-		yylval.vvar = symbol;
-		fmt.Printf("lex: found instruction %s\n", symbol)
+		yylval.inst = DcpuInstruction(symbol);
+		debugf("lex: found instruction %s\n", symbol)
 		return instruction
 	}
 
@@ -90,21 +96,22 @@ func (lex *DCPULex) findSym(yylval *yySymType) int {
 }
 
 func (lex *DCPULex) findLabel(yylval *yySymType) int {
-	fmt.Printf("findLabel\n")
+	debugf("findLabel\n")
 	r := lex.getRune()
 	symbol := string(r)
 	for isAlpha(r) {
 		symbol += string(r)
 		r = lex.nextLetter()
 	}
-	yylval.vvar = symbol
-	fmt.Printf("lex: found label %s\n", symbol)
-	return label
 
+	debugf("lex: found label %s\n", symbol)
+	
+	yylval.lab = DcpuLabel(symbol)
+	return label
 }
 
 func (lex *DCPULex) findLitteral(yylval *yySymType) int {
-	fmt.Printf("findLitteral\n")
+	debugf("findLitteral\n")
 	symbol := "0x"
 	r := lex.nextLetter()
 	for isDigit(r) {
@@ -113,15 +120,15 @@ func (lex *DCPULex) findLitteral(yylval *yySymType) int {
 	}
 	n, _ := strconv.ParseUint(symbol, 0, 16)
 	// not sure whawt to do with err
-	yylval.num = uint16(n)
-	fmt.Printf("lex: found litteral %x\n", yylval.num)
+	yylval.lit = DcpuLitteral(n)
+	debugf("lex: found litteral %x\n", yylval.lit)
 	return litteral
 }
 
 func (lex *DCPULex) Lex(yylval *yySymType) int {
 	r := lex.getRune()
 loop:
-	fmt.Printf("looping with '%c'\n", r)
+	debugf("looping with '%c'\n", r)
 	switch {
 	case r == ':':
 		return lex.findLabel(yylval)
@@ -137,7 +144,7 @@ loop:
 		goto loop
 		
 	default:
-		fmt.Printf("hmm should not happen?\n")
+		debugf("hmm should not happen?\n")
 		lex.nextLetter()
 		return int(r) // hmm...
 	}
