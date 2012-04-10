@@ -3,8 +3,7 @@
 package parser
 
 import "fmt"
-
-var ParsedProgram DcpuProgram
+import "reflect"
 
 //line dcpuAssembly.y:21
 type yySymType struct {
@@ -17,16 +16,19 @@ type yySymType struct {
 	operand DcpuOperand
 	ref DcpuReference
 	sum DcpuSum
+	specialReg DcpuSpecialRegister
 }
 
 const instruction = 57346
 const register = 57347
-const label = 57348
-const litteral = 57349
+const specialRegister = 57348
+const label = 57349
+const litteral = 57350
 
 var yyToknames = []string{
 	"instruction",
 	"register",
+	"specialRegister",
 	"label",
 	"litteral",
 }
@@ -43,51 +45,51 @@ var yyExca = []int{
 	-2, 0,
 }
 
-const yyNprod = 14
+const yyNprod = 15
 const yyPrivate = 57344
 
 var yyTokenNames []string
 var yyStates []string
 
-const yyLast = 24
+const yyLast = 25
 
 var yyAct = []int{
 
-	6, 7, 10, 9, 21, 11, 22, 20, 15, 13,
-	17, 23, 12, 18, 19, 3, 2, 4, 16, 5,
-	14, 8, 1, 24,
+	6, 7, 8, 11, 10, 22, 12, 23, 21, 16,
+	14, 24, 18, 3, 19, 20, 4, 13, 2, 17,
+	15, 5, 9, 1, 25,
 }
 var yyPact = []int{
 
-	11, -1000, 11, -4, 8, -1000, 1, -1000, -1000, -1000,
-	-1000, 3, -4, -4, -3, -1000, -1000, -7, -2, -1000,
-	-1000, 6, -4, -1000, -1000,
+	9, -1000, 9, -4, 13, -1000, 1, -1000, -1000, -1000,
+	-1000, -1000, 4, -4, -4, -3, -1000, -1000, -7, -2,
+	-1000, -1000, 6, -4, -1000, -1000,
 }
 var yyPgo = []int{
 
-	0, 22, 16, 0, 21, 20, 18,
+	0, 23, 18, 0, 22, 20, 19,
 }
 var yyR1 = []int{
 
-	0, 1, 1, 2, 2, 3, 3, 3, 3, 4,
-	5, 5, 5, 6,
+	0, 1, 1, 2, 2, 3, 3, 3, 3, 3,
+	4, 5, 5, 5, 6,
 }
 var yyR2 = []int{
 
-	0, 1, 2, 4, 5, 1, 1, 1, 1, 3,
-	1, 1, 1, 3,
+	0, 1, 2, 4, 5, 1, 1, 1, 1, 1,
+	3, 1, 1, 1, 3,
 }
 var yyChk = []int{
 
-	-1000, -1, -2, 4, 6, -2, -3, 5, -4, 7,
-	6, 9, 4, 8, -5, 5, -6, 7, -3, -3,
-	10, 11, 8, 5, -3,
+	-1000, -1, -2, 4, 7, -2, -3, 5, 6, -4,
+	8, 7, 10, 4, 9, -5, 5, -6, 8, -3,
+	-3, 11, 12, 9, 5, -3,
 }
 var yyDef = []int{
 
 	0, -2, 1, 0, 0, 2, 0, 5, 6, 7,
-	8, 0, 0, 0, 0, 10, 11, 12, 0, 3,
-	9, 0, 0, 13, 4,
+	8, 9, 0, 0, 0, 0, 11, 12, 13, 0,
+	3, 10, 0, 0, 14, 4,
 }
 var yyTok1 = []int{
 
@@ -95,16 +97,16 @@ var yyTok1 = []int{
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 11, 8, 3, 3, 3, 3, 3,
+	3, 3, 3, 12, 9, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 9, 3, 10,
+	3, 10, 3, 11,
 }
 var yyTok2 = []int{
 
-	2, 3, 4, 5, 6, 7,
+	2, 3, 4, 5, 6, 7, 8,
 }
 var yyTok3 = []int{
 	0,
@@ -335,17 +337,25 @@ yydefault:
 	switch yynt {
 
 	case 1:
-		//line dcpuAssembly.y:35
+		//line dcpuAssembly.y:36
 		{
-		ParsedProgram.expressions = append(ParsedProgram.expressions, yyS[yypt-0].expr)
+		if lexer, ok := yylex.(*DCPULex) ; ok {
+			lexer.hack.ast = DcpuProgram{expressions: append(lexer.hack.ast.expressions, yyS[yypt-0].expr)}
+		} else {
+			panic(fmt.Sprintf("unexected lexer type, got: %s", reflect.TypeOf(lexer)))
+		}
 	}
 	case 2:
-		//line dcpuAssembly.y:40
+		//line dcpuAssembly.y:45
 		{
-		ParsedProgram.expressions = append(ParsedProgram.expressions, yyS[yypt-1].expr, yyS[yypt-0].expr)
+		if lexer, ok := yylex.(*DCPULex) ; ok {
+			lexer.hack.ast = DcpuProgram{expressions: append(lexer.hack.ast.expressions, yyS[yypt-1].expr, yyS[yypt-0].expr)}
+		} else {
+			panic(fmt.Sprintf("unexected lexer type, got: %s", reflect.TypeOf(lexer)))
+		}	
 	}
 	case 3:
-		//line dcpuAssembly.y:45
+		//line dcpuAssembly.y:54
 		{
 		expr := new(DcpuExpression)
 		expr.inst = yyS[yypt-3].inst
@@ -355,7 +365,7 @@ yydefault:
 		yyVAL.expr = *expr
 	}
 	case 4:
-		//line dcpuAssembly.y:55
+		//line dcpuAssembly.y:64
 		{
 		expr := new(DcpuExpression)
 		expr.inst = yyS[yypt-3].inst
@@ -366,53 +376,58 @@ yydefault:
 	
 	}
 	case 5:
-		//line dcpuAssembly.y:66
+		//line dcpuAssembly.y:75
 		{
 		yyVAL.operand = DcpuRegister(yyS[yypt-0].reg)
 	}
 	case 6:
-		//line dcpuAssembly.y:70
+		//line dcpuAssembly.y:80
+		{
+		yyVAL.operand = DcpuSpecialRegister(yyS[yypt-0].specialReg)
+	}
+	case 7:
+		//line dcpuAssembly.y:85
 		{
 		yyVAL.operand = yyS[yypt-0].ref
 	}
-	case 7:
-		//line dcpuAssembly.y:74
+	case 8:
+		//line dcpuAssembly.y:89
 		{
 		yyVAL.operand = DcpuLitteral(yyS[yypt-0].lit)
 	}
-	case 8:
-		//line dcpuAssembly.y:78
+	case 9:
+		//line dcpuAssembly.y:93
 		{
 		yyVAL.operand = DcpuLabel(yyS[yypt-0].lab)
 	}
-	case 9:
-		//line dcpuAssembly.y:83
+	case 10:
+		//line dcpuAssembly.y:98
 		{
 		yyVAL.ref = yyS[yypt-1].ref
 	}
-	case 10:
-		//line dcpuAssembly.y:88
+	case 11:
+		//line dcpuAssembly.y:103
 		{
 		reference := new (DcpuReference)
 		reference.ref = yyS[yypt-0].reg
 		yyVAL.ref = *reference
 	}
-	case 11:
-		//line dcpuAssembly.y:94
+	case 12:
+		//line dcpuAssembly.y:109
 		{
 		reference := new (DcpuReference)
 		reference.ref = yyS[yypt-0].sum
 		yyVAL.ref = *reference
 	}
-	case 12:
-		//line dcpuAssembly.y:100
+	case 13:
+		//line dcpuAssembly.y:115
 		{
 		reference := new (DcpuReference)
 		reference.ref = yyS[yypt-0].lit
 		yyVAL.ref = *reference
 	}
-	case 13:
-		//line dcpuAssembly.y:106
+	case 14:
+		//line dcpuAssembly.y:121
 		{
 		sum := new(DcpuSum)
 		sum.lit = yyS[yypt-2].lit

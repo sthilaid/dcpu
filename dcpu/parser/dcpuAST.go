@@ -47,8 +47,9 @@ func (prog DcpuProgram)String() string {
 }
 
 func (prog DcpuProgram)IsEqualTo(prog1 DcpuProgram) (bool, string) {
-	if len(prog.expressions) != len(prog1.expressions) {
-		return false, "Programs are not of same length!"
+	progSize, prog1Size := len(prog.expressions), len(prog1.expressions)
+	if progSize != progSize {
+		return false, fmt.Sprintf("Programs are not of same length! (%d != %d)", progSize, prog1Size)
 	}
 	for i,expr := range prog.expressions {
 		if equal,err := expr.IsEqualTo(prog1.expressions[i]) ; !equal {
@@ -163,7 +164,7 @@ func (refNode DcpuReference)Size(prog DcpuProgram) byte {
 }
 
 func (refNode DcpuReference)String() string {
-	return refNode.ref.String()
+	return "["+refNode.ref.String()+"]"
 }
 
 func (refNode DcpuReference)IsEqualTo(op DcpuComparable) (bool, string) {
@@ -213,6 +214,40 @@ func (reg DcpuRegister) IsEqualTo(op DcpuComparable) (bool,string) {
 		return false, fmt.Sprintf("different types of operands (%s, %s)", reg, op)
 	} else if reg != reg1 {
 		return false, fmt.Sprintf("Different registers (%s, %s)", reg, reg1)
+	}
+	return true, ""
+}
+
+//---------------------------
+// special register node description
+//---------------------------
+
+type DcpuSpecialRegister string
+
+func (reg DcpuSpecialRegister) Code(prog DcpuProgram) []dcpu.Word {
+	switch string(reg) {
+	case "POP":  return []dcpu.Word{0x18}
+	case "PEEK": return []dcpu.Word{0x19}
+	case "PUSH": return []dcpu.Word{0x1a}
+	case "SP":   return []dcpu.Word{0x1b}
+	case "PC":   return []dcpu.Word{0x1c}
+	case "O":    return []dcpu.Word{0x1d}
+	}
+	panic(fmt.Sprintf("Couldn't find special register: %s", reg))
+}
+func (reg DcpuSpecialRegister) Size(prog DcpuProgram) byte {
+	return 0
+}
+
+func (reg DcpuSpecialRegister) String() string {
+	return string(reg)
+}
+
+func (reg DcpuSpecialRegister) IsEqualTo(op DcpuComparable) (bool,string) {
+	if reg1, ok := op.(DcpuSpecialRegister) ; !ok {
+		return false, fmt.Sprintf("different types of operands (%s, %s)", reg, op)
+	} else if reg != reg1 {
+		return false, fmt.Sprintf("Different special registers (%s, %s)", reg, reg1)
 	}
 	return true, ""
 }

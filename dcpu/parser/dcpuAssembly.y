@@ -3,13 +3,13 @@
 package parser
 
 import "fmt"
-
-var ParsedProgram DcpuProgram
+import "reflect"
 %}
 
 %start program
 %token <inst> instruction
 %token <reg> register
+%token <specialReg> specialRegister
 %token <lab> label
 %token <lit> litteral
 %type <expr> expression
@@ -27,18 +27,27 @@ var ParsedProgram DcpuProgram
 	operand DcpuOperand
 	ref DcpuReference
 	sum DcpuSum
+	specialReg DcpuSpecialRegister
 }
 
 %%
 	
 program: expression
 {
-	ParsedProgram.expressions = append(ParsedProgram.expressions, $1)
+	if lexer, ok := yylex.(*DCPULex) ; ok {
+		lexer.hack.ast = DcpuProgram{expressions: append(lexer.hack.ast.expressions, $1)}
+	} else {
+		panic(fmt.Sprintf("unexected lexer type, got: %s", reflect.TypeOf(lexer)))
+	}
 }
 
 program: expression expression
 {
-	ParsedProgram.expressions = append(ParsedProgram.expressions, $1, $2)
+	if lexer, ok := yylex.(*DCPULex) ; ok {
+		lexer.hack.ast = DcpuProgram{expressions: append(lexer.hack.ast.expressions, $1, $2)}
+	} else {
+		panic(fmt.Sprintf("unexected lexer type, got: %s", reflect.TypeOf(lexer)))
+	}	
 }
 
 expression: instruction operand ',' operand
@@ -66,6 +75,12 @@ operand: register
 {
 	$$ = DcpuRegister($1)
 }
+
+operand: specialRegister
+{
+	$$ = DcpuSpecialRegister($1)
+}
+
 operand: reference
 {
 	$$ = $1

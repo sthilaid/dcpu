@@ -11,42 +11,53 @@ func debugf(fmtstr string, args ...interface{}) {
 }
 
 func isAlpha(r byte) bool {
-	return r >= 'A' && r <= 'z'
+	return (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z')
 }
 
 func isDigit(r byte) bool {
-	debugf("isDigit '%c' >= '0': %t, '%c' <= '9': %t\n", r, (r >= '0'), r, (r <= '9'))
-	return r >= '0' && r <= '9'
+	//debugf("isDigit '%c' >= '0': %t, '%c' <= '9': %t\n", r, (r >= '0'), r, (r <= '9'))
+	return (r >= '0' && r <= '9') || (r >= 'A' && r <= 'F') || (r >= 'a' && r <= 'f')
 }
 
-  
-type DCPULex struct {
+type DCPULexHack struct {
 	index int
 	currentRune byte
 	code string
-	initialized bool
+	ast DcpuProgram
+}
+
+// Warning incoming HACK!
+// this structure is a hack because Yacc is forcing us to implement
+// the method (lex DCPULex) and not (lex *DCPULex). So with the hack
+// container, the pointer to the data is copied, but the data is kept
+// safe :)
+type DCPULex struct {
+	hack *DCPULexHack
+}
+
+func (lex *DCPULex)Init(code string) {
+	lex.hack = new(DCPULexHack)
+	lex.hack.code = code
+	lex.hack.ast = DcpuProgram{expressions: []DcpuExpression{}}
+	lex.nextLetter()
 }
 
 func (lex *DCPULex) nextLetter() byte {
-	if lex.index >= len(lex.code) {
-		lex.currentRune = 0x0 // end of parsing
-		return lex.currentRune
+	if lex.hack.index >= len(lex.hack.code) {
+		lex.hack.currentRune = 0x0 // end of parsing
+		return lex.hack.currentRune
 	} else {
 		
-		lex.currentRune = lex.code[lex.index] ;
-		lex.index++ ;
-		debugf("lex nextLetter: '%c'\n", lex.currentRune)
-		return lex.currentRune
+		lex.hack.currentRune = lex.hack.code[lex.hack.index] ;
+		lex.hack.index++ ;
+		debugf("lex nextLetter: '%c'\n", lex.hack.currentRune)
+		return lex.hack.currentRune
 	}
 	panic ("shouldnt occur in nextLetter")
 }
 
 func (lex *DCPULex) getRune() byte {
-	if (!lex.initialized) {
-		lex.nextLetter()
-		lex.initialized = true
-	}
-	return lex.currentRune
+	return lex.hack.currentRune
 }
 
 func (lex *DCPULex) findSym(yylval *yySymType) int {
@@ -90,6 +101,15 @@ func (lex *DCPULex) findSym(yylval *yySymType) int {
 		yylval.inst = DcpuInstruction(symbol);
 		debugf("lex: found instruction %s\n", symbol)
 		return instruction
+	case "POP": fallthrough
+	case "PEEK": fallthrough
+	case "PUSH": fallthrough
+	case "SP": fallthrough
+	case "PC": fallthrough
+	case "O":
+		yylval.specialReg = DcpuSpecialRegister(symbol);
+		debugf("lex: found special register %s\n", symbol)
+		return specialRegister
 	}
 
 	panic ("couldnt lex symbol")
@@ -118,14 +138,17 @@ func (lex *DCPULex) findLitteral(yylval *yySymType) int {
 		symbol += string(r)
 		r = lex.nextLetter()
 	}
-	n, _ := strconv.ParseUint(symbol, 0, 16)
+	n, err := strconv.ParseUint(symbol, 0, 16)
 	// not sure whawt to do with err
+	if err != nil {
+		debugf("parse err: %s\n", err.Error())
+	}
 	yylval.lit = DcpuLitteral(n)
 	debugf("lex: found litteral %x\n", yylval.lit)
 	return litteral
 }
 
-func (lex *DCPULex) Lex(yylval *yySymType) int {
+func (lex DCPULex) Lex(yylval *yySymType) int {
 	r := lex.getRune()
 loop:
 	debugf("looping with '%c'\n", r)
@@ -144,7 +167,7 @@ loop:
 		goto loop
 		
 	default:
-		debugf("hmm should not happen?\n")
+		debugf("passing char '%c' to parser directly...\n", r)
 		lex.nextLetter()
 		return int(r) // hmm...
 	}
