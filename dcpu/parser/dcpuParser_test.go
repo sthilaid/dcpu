@@ -87,26 +87,56 @@ func TestParsing4(t *testing.T) {
 	}
 }
 
+//-----------------------------------------------------------------------------
+// Parsing failure checks
 
-/*
-func TestParsing1(t *testing.T) {
+func TestParsingFailure0(t *testing.T) {
+	defer func() {
+		if panic := recover(); panic == nil {
+			t.Errorf("Should not parse code with invalid syntax (missing ',')...")
+		}
+	}()
+			
 	lex := new(DCPULex)
-	lex.code = "ADD [0xAAAA], 0xFF00 SET PUSH, [0xAAAA]"
+	// missing a "," after 'a'
+	lex.Init("SET PUSH 0x10")
 	yyParse(lex)
-
-	var expr0 DcpuExpression
-	var expr1 DcpuExpression
-	var ref0 DcpuReference
-
-	expr0.inst = DcpuInstruction("ADD")
-	ref0 = DcpuLitteral(0xaaaa)
-	expr0.a = ref0
-	expr0.b = DcpuLitteral(0xff00)
-
-	expr1.inst = DcpuInstruction("SET")
-	//...
-	
-	ast := new(DcpuProgram)
-	ast.expressions = []DcpuExpression{expr0, expr1}
 }
-*/
+
+func TestParsingFailure1(t *testing.T) {
+	defer func() {
+		if panic := recover(); panic == nil {
+			t.Errorf("Should not permit addition outside ref...")
+		}
+	}()
+			
+	lex := new(DCPULex)
+	// not allowed to have addition outside a reference
+	lex.Init("SET 0x10+B, 0x10")
+	yyParse(lex)
+}
+
+func TestParsingFailure2(t *testing.T) {
+	defer func() {
+		if panic := recover(); panic == nil {
+			t.Errorf("Should not be allowed to referece special registers...")
+		}
+	}()
+			
+	lex := new(DCPULex)
+	// not allowed to have addition outside a reference
+	lex.Init("SET [SP], 0x0")
+	yyParse(lex)
+}
+
+func TestParsingFailure3(t *testing.T) {
+	defer func() {
+		if panic := recover(); panic == nil {
+			t.Errorf("Should not parse invalid instructions...")
+		}
+	}()
+			
+	lex := new(DCPULex)
+	lex.Init("SOT A, 0x0")
+	yyParse(lex)
+}

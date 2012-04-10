@@ -175,5 +175,5 @@ loop:
 }
 
 func (DCPULex) Error(s string) {
-	println("syntax error!")
+	panic("syntax error!")
 }
