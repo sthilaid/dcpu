@@ -1,6 +1,11 @@
 package parser
 
+import "dcpu"
+import "fmt"
 import "testing"
+
+//-----------------------------------------------------------------------------
+// testing correct contruction of AST from assembly
 
 func TestParsing0(t *testing.T) {
 	lex := new(DCPULex)
@@ -156,4 +161,86 @@ func TestParsingFailure3(t *testing.T) {
 	lex := new(DCPULex)
 	lex.Init("SOT A, 0x0")
 	yyParse(lex)
+}
+
+//-----------------------------------------------------------------------------
+// Validing AST -> binary conversion
+
+// returns false if the 2 slices are different
+func compareBinaries(bin1, bin2 []dcpu.Word) bool {
+	size := len(bin1)
+	if size != len(bin2) {
+		return false
+	}
+	
+	for i := 0 ; i < size ; i++ {
+		if bin1[i] != bin2[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func dump(mem *[]dcpu.Word) string {
+	str := []byte("[")
+	size := len(*mem)
+	for i := 0 ; i < size ; i++ {
+		str = append(str, fmt.Sprintf("0x%x, ", (*mem)[i])...)
+	}
+	return string(append(str, "]"...))
+}
+
+
+func TestBinary0(t *testing.T) {
+	lex := new(DCPULex)
+	lex.Init("SET A, 0x30")
+	yyParse(lex)
+
+	code := lex.hack.ast.Code()
+	expectedCode := []dcpu.Word{0x7c01, 0x0030}
+
+	if !compareBinaries(code, expectedCode) {
+		t.Errorf("Binaries does not correspond, got %s expcted %s", dump(&code), dump(&expectedCode))
+	}
+}
+
+func TestBinary1(t *testing.T) {
+	lex := new(DCPULex)
+	lex.Init("ADD [X], [0x1]")
+	yyParse(lex)
+	code := lex.hack.ast.Code()
+	expectedCode := []dcpu.Word{0x78b2, 0x1}
+
+	if !compareBinaries(code, expectedCode) {
+		t.Errorf("Binaries does not correspond, got %s expcted %s", dump(&code), dump(&expectedCode))
+	}
+}
+
+func TestBinary2(t *testing.T) {
+	lex := new(DCPULex)
+	lex.Init("BOR [0xab +I], [0x1]")
+	yyParse(lex)
+	//todo
+}
+
+func TestBinary3(t *testing.T) {
+	lex := new(DCPULex)
+	lex.Init("SET PC, 0x0")
+	yyParse(lex)
+	//todo
+}
+
+func TestBinary4(t *testing.T) {
+	lex := new(DCPULex)
+	lex.Init("SET PUSH, 0x10 ADD PEEK, 0x1")
+	yyParse(lex)
+	//todo
+}
+
+func TestBinary5(t *testing.T) {
+	lex := new(DCPULex)
+	lex.Init(":loop SET PC, loop")
+	yyParse(lex)
+	//todo
 }
