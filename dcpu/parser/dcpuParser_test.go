@@ -87,6 +87,23 @@ func TestParsing4(t *testing.T) {
 	}
 }
 
+func TestParsing5(t *testing.T) {
+	lex := new(DCPULex)
+	lex.Init(":loop SET PC, loop")
+	yyParse(lex)
+	expr0 := DcpuExpression{inst: DcpuInstruction("SET"),
+		                a:    DcpuSpecialRegister("PC"),
+		                b:    DcpuLabel("loop"),
+	                        label: "loop",
+	}
+
+	program := DcpuProgram{expressions: []DcpuExpression{expr0}}
+
+	if equal, err := program.IsEqualTo(lex.hack.ast) ; !equal {
+		t.Errorf(err)
+	}
+}
+
 //-----------------------------------------------------------------------------
 // Parsing failure checks
 

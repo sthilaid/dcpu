@@ -3,7 +3,7 @@ package parser
 import "fmt"
 import "strconv"
 
-var debugActivated bool = false
+var debugActivated bool = true
 func debugf(fmtstr string, args ...interface{}) {
 	if debugActivated {
 		fmt.Printf(fmtstr, args...)
@@ -80,7 +80,7 @@ func (lex *DCPULex) findSym(yylval *yySymType) int {
 	case "Z": fallthrough
 	case "I": fallthrough
 	case "J": 
-		yylval.reg = DcpuRegister(symbol);
+		yylval.reg = DcpuRegister(symbol)
 		debugf("lex: found register %s\n", symbol)
 		return register
 	case "SET": fallthrough
@@ -98,7 +98,7 @@ func (lex *DCPULex) findSym(yylval *yySymType) int {
 	case "IFN": fallthrough
 	case "IFG": fallthrough
 	case "IFB":
-		yylval.inst = DcpuInstruction(symbol);
+		yylval.inst = DcpuInstruction(symbol)
 		debugf("lex: found instruction %s\n", symbol)
 		return instruction
 	case "POP": fallthrough
@@ -107,18 +107,23 @@ func (lex *DCPULex) findSym(yylval *yySymType) int {
 	case "SP": fallthrough
 	case "PC": fallthrough
 	case "O":
-		yylval.specialReg = DcpuSpecialRegister(symbol);
+		yylval.specialReg = DcpuSpecialRegister(symbol)
 		debugf("lex: found special register %s\n", symbol)
 		return specialRegister
+
+	default:
+		yylval.lab = DcpuLabel(symbol)
+		debugf("lex: assuming label %s\n", symbol)
+		return label
 	}
 
-	panic ("couldnt lex symbol")
+	panic ("couldnt lex symbol (should not occur)")
 }
 
 func (lex *DCPULex) findLabel(yylval *yySymType) int {
 	debugf("findLabel\n")
-	r := lex.getRune()
-	symbol := string(r)
+	r := lex.nextLetter() // dont keep the ":" in the label
+	symbol := ""
 	for isAlpha(r) {
 		symbol += string(r)
 		r = lex.nextLetter()
