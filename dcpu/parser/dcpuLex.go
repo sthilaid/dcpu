@@ -3,7 +3,7 @@ package parser
 import "fmt"
 import "strconv"
 
-var debugActivated bool = true
+var debugActivated bool = false
 func debugf(fmtstr string, args ...interface{}) {
 	if debugActivated {
 		fmt.Printf(fmtstr, args...)
