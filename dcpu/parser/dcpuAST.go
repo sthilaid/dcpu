@@ -18,27 +18,46 @@ type DcpuProgram struct {
 	labels map[DcpuLabel]byte
 }
 
-func (prog DcpuProgram)processLabels() {
+func (prog *DcpuProgram)processLabels() {
 	var currentSize byte = 0
+	var changed bool = true
+	var iterationLimit = 1000
+	var i int
+	
 	prog.labels = make(map[DcpuLabel]byte)
-
-	for _, expr := range prog.expressions {
-		if expr.label != "" {
-			prog.labels[expr.label] = currentSize
-			currentSize += expr.Size(prog)
+	
+	for i = 0 ; changed && i < iterationLimit ; i++ {
+		changed = false
+		currentSize = 0
+		for _, expr := range prog.expressions {
+			if expr.label != "" {
+				previousValue := prog.labels[expr.label]
+				prog.labels[expr.label] = currentSize
+				if previousValue != currentSize {
+					changed = true
+				}
+			}
+			currentSize += expr.Size(*prog)
 		}
+	}
+
+	// safeguard
+	if i == iterationLimit {
+		panic("could not process AST labels, iteration limit reached")
 	}
 }
 
-func (prog DcpuProgram)Code() []dcpu.Word {
+func (prog *DcpuProgram)Code() []dcpu.Word {
+	prog.processLabels()
+	
 	code := []dcpu.Word{}
 	for _, expr := range prog.expressions {
-		code = append(code, expr.Code(prog)...)
+		code = append(code, expr.Code(*prog)...)
 	}
 	return code
 }
 
-func (prog DcpuProgram)String() string {
+func (prog *DcpuProgram)String() string {
 	str := "Program {"
 	for _,expr := range prog.expressions {
 		str += expr.String() + ", "
@@ -46,7 +65,7 @@ func (prog DcpuProgram)String() string {
 	return str + "}\n"
 }
 
-func (prog DcpuProgram)IsEqualTo(prog1 DcpuProgram) (bool, string) {
+func (prog *DcpuProgram)IsEqualTo(prog1 DcpuProgram) (bool, string) {
 	progSize, prog1Size := len(prog.expressions), len(prog1.expressions)
 	if progSize != progSize {
 		return false, fmt.Sprintf("Programs are not of same length! (%d != %d)", progSize, prog1Size)
@@ -341,6 +360,7 @@ type DcpuLabel string
 
 func (label DcpuLabel)Code(prog DcpuProgram) []dcpu.Word {
 	value := prog.labels[label]
+	fmt.Printf("label value: 0x%x\n", value)
 	lit := DcpuLitteral(value)
 	return lit.Code(prog)
 }

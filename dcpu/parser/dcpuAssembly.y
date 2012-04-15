@@ -17,8 +17,11 @@ import "reflect"
 %type <ref> reference
 %type <ref> referenceValue
 %type <sum> sum
+%type <prog> program
+%type <exprlst> expressionList
 
 %union {
+	prog DcpuProgram
 	expr DcpuExpression
 	inst DcpuInstruction
 	reg DcpuRegister
@@ -28,26 +31,37 @@ import "reflect"
 	ref DcpuReference
 	sum DcpuSum
 	specialReg DcpuSpecialRegister
+	exprlst []DcpuExpression
 }
 
 %%
 	
-program: expression
+program: expressionList
 {
 	if lexer, ok := yylex.(*DCPULex) ; ok {
-		lexer.hack.ast = DcpuProgram{expressions: append(lexer.hack.ast.expressions, $1)}
+		lexer.hack.ast = DcpuProgram{expressions: $1}
 	} else {
 		panic(fmt.Sprintf("unexected lexer type, got: %s", reflect.TypeOf(lexer)))
 	}
 }
 
-program: expression expression
+expressionList: expression expressionList 
 {
 	if lexer, ok := yylex.(*DCPULex) ; ok {
-		lexer.hack.ast = DcpuProgram{expressions: append(lexer.hack.ast.expressions, $1, $2)}
+		var expr DcpuExpression = $1
+		var list []DcpuExpression = $2
+		// here, since the regular expression solving will
+		// match the last expressions first, we must append at
+		// the begginning of the slice ;p
+		$$ = append([]DcpuExpression{expr}, list...)
 	} else {
 		panic(fmt.Sprintf("unexected lexer type, got: %s", reflect.TypeOf(lexer)))
-	}	
+	}
+}
+
+expressionList:
+{
+	$$ = []DcpuExpression{}
 }
 
 expression: instruction operand ',' operand
