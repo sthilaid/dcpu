@@ -111,6 +111,9 @@ func (lex *DCPULex) findSym(yylval *yySymType) int {
 		debugf("lex: found special register %s\n", symbol)
 		return specialRegister
 
+	case "DAT":
+		return dataInstruction
+
 	default:
 		yylval.lab = DcpuLabel(symbol)
 		debugf("lex: assuming label %s\n", symbol)
@@ -153,6 +156,27 @@ func (lex *DCPULex) findLitteral(yylval *yySymType) int {
 	return litteral
 }
 
+func (lex *DCPULex) findString(yylval *yySymType) int {
+	debugf("findString\n")
+	delimiter := lex.getRune()
+	strDat := ""
+	r := lex.nextLetter()
+	for r != delimiter {
+		strDat += string(r)
+		r = lex.nextLetter()
+		if r == 0 {
+			panic("couldnt lex string")
+		}
+	}
+
+	// clear the delimiter
+	lex.nextLetter()
+	
+	yylval.str = strDat
+	debugf("lex: found string \"%s\"\n", strDat)
+	return stringData
+}
+
 func (lex DCPULex) Lex(yylval *yySymType) int {
 	r := lex.getRune()
 loop:
@@ -160,6 +184,9 @@ loop:
 	switch {
 	case r == ':':
 		return lex.findLabel(yylval)
+
+	case r == '\'' || r == '"':
+		return lex.findString(yylval)
 		
 	case isAlpha(r):
 		return lex.findSym(yylval);

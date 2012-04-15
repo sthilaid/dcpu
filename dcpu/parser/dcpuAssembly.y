@@ -4,6 +4,7 @@ package parser
 
 import "fmt"
 import "reflect"
+import "dcpu"
 %}
 
 %start program
@@ -12,7 +13,11 @@ import "reflect"
 %token <specialReg> specialRegister
 %token <lab> label
 %token <lit> litteral
+%token <dat> dataInstruction
+%token <str> stringData
 %type <expr> expression
+%type <nexpr> normalExpression
+%type <dexpr> dataExpression
 %type <operand> operand
 %type <ref> reference
 %type <ref> referenceValue
@@ -23,10 +28,14 @@ import "reflect"
 %union {
 	prog DcpuProgram
 	expr DcpuExpression
+	nexpr DcpuNormalExpression
+	dexpr DcpuDataExpression
 	inst DcpuInstruction
 	reg DcpuRegister
 	lab DcpuLabel
 	lit DcpuLitteral
+	dat string
+	str string
 	operand DcpuOperand
 	ref DcpuReference
 	sum DcpuSum
@@ -64,9 +73,20 @@ expressionList:
 	$$ = []DcpuExpression{}
 }
 
-expression: instruction operand ',' operand
+expression: normalExpression
 {
-	expr := new(DcpuExpression)
+	$$ = $1
+}
+
+expression: dataExpression
+{
+	$$ = $1
+}
+
+
+normalExpression: instruction operand ',' operand
+{
+	expr := new(DcpuNormalExpression)
 	expr.inst = $1
 	expr.a = $2
 	expr.b = $4
@@ -74,15 +94,14 @@ expression: instruction operand ',' operand
 	$$ = *expr
 }
 
-expression: label instruction operand ',' operand
+normalExpression: label instruction operand ',' operand
 {
-	expr := new(DcpuExpression)
+	expr := new(DcpuNormalExpression)
 	expr.inst = $2
 	expr.a = $3
 	expr.b = $5
 	expr.label = $1
 	$$ = *expr
-
 }
 
 operand: register
@@ -131,10 +150,41 @@ referenceValue: litteral
 	reference.ref = $1
 	$$ = *reference
 }
+referenceValue: label
+{
+	reference := new (DcpuReference)
+	reference.ref = $1
+	$$ = *reference
+}
+
 sum: litteral '+' register
 {
 	sum := new(DcpuSum)
 	sum.lit = $1
 	sum.reg = $3
 	$$ = *sum
+}
+
+dataExpression: label dataInstruction litteral
+{
+	expr := new(DcpuDataExpression)
+	expr.data = []dcpu.Word{dcpu.Word($3)}
+	expr.label = $1
+	$$ = *expr
+}
+
+dataExpression: label dataInstruction stringData
+{
+	expr := new(DcpuDataExpression)
+	//expr.data = []dcpu.Word([]byte(string(label)))
+
+	str := $3
+	data := []dcpu.Word{}
+	for _,char := range str {
+		data = append(data, dcpu.Word(char))
+	}
+	expr.data = data
+	
+	expr.label = $1
+	$$ = *expr
 }

@@ -4,16 +4,21 @@ package parser
 
 import "fmt"
 import "reflect"
+import "dcpu"
 
-//line dcpuAssembly.y:23
+//line dcpuAssembly.y:28
 type yySymType struct {
 	yys int
 	prog DcpuProgram
 	expr DcpuExpression
+	nexpr DcpuNormalExpression
+	dexpr DcpuDataExpression
 	inst DcpuInstruction
 	reg DcpuRegister
 	lab DcpuLabel
 	lit DcpuLitteral
+	dat string
+	str string
 	operand DcpuOperand
 	ref DcpuReference
 	sum DcpuSum
@@ -26,6 +31,8 @@ const register = 57347
 const specialRegister = 57348
 const label = 57349
 const litteral = 57350
+const dataInstruction = 57351
+const stringData = 57352
 
 var yyToknames = []string{
 	"instruction",
@@ -33,6 +40,8 @@ var yyToknames = []string{
 	"specialRegister",
 	"label",
 	"litteral",
+	"dataInstruction",
+	"stringData",
 }
 var yyStatenames = []string{}
 
@@ -47,51 +56,57 @@ var yyExca = []int{
 	-2, 0,
 }
 
-const yyNprod = 16
+const yyNprod = 21
 const yyPrivate = 57344
 
 var yyTokenNames []string
 var yyStates []string
 
-const yyLast = 26
+const yyLast = 32
 
 var yyAct = []int{
 
-	7, 8, 9, 12, 11, 23, 13, 24, 22, 17,
-	15, 4, 19, 25, 5, 20, 21, 14, 2, 18,
-	16, 10, 6, 3, 1, 26,
+	9, 10, 11, 14, 13, 29, 28, 21, 15, 30,
+	25, 18, 26, 20, 31, 23, 22, 24, 16, 27,
+	19, 6, 2, 17, 7, 12, 8, 5, 4, 3,
+	1, 32,
 }
 var yyPact = []int{
 
-	7, -1000, -1000, 7, -4, 13, -1000, 1, -1000, -1000,
-	-1000, -1000, -1000, 4, -4, -4, -3, -1000, -1000, -7,
-	-2, -1000, -1000, 8, -4, -1000, -1000,
+	17, -1000, -1000, 17, -1000, -1000, -4, 14, -1000, 0,
+	-1000, -1000, -1000, -1000, -1000, 8, -4, 2, -4, -7,
+	-1000, -1000, -9, -1000, -2, -1000, -1000, -1000, -1000, 9,
+	-4, -1000, -1000,
 }
 var yyPgo = []int{
 
-	0, 24, 23, 0, 21, 20, 19, 18,
+	0, 30, 29, 28, 27, 0, 25, 20, 7, 22,
 }
 var yyR1 = []int{
 
-	0, 1, 7, 7, 2, 2, 3, 3, 3, 3,
-	3, 4, 5, 5, 5, 6,
+	0, 1, 9, 9, 2, 2, 3, 3, 5, 5,
+	5, 5, 5, 6, 7, 7, 7, 7, 8, 4,
+	4,
 }
 var yyR2 = []int{
 
-	0, 1, 2, 0, 4, 5, 1, 1, 1, 1,
-	1, 3, 1, 1, 1, 3,
+	0, 1, 2, 0, 1, 1, 4, 5, 1, 1,
+	1, 1, 1, 3, 1, 1, 1, 1, 3, 3,
+	3,
 }
 var yyChk = []int{
 
-	-1000, -1, -7, -2, 4, 7, -7, -3, 5, 6,
-	-4, 8, 7, 10, 4, 9, -5, 5, -6, 8,
-	-3, -3, 11, 12, 9, 5, -3,
+	-1000, -1, -9, -2, -3, -4, 4, 7, -9, -5,
+	5, 6, -6, 8, 7, 12, 4, 9, 11, -7,
+	5, -8, 8, 7, -5, 8, 10, -5, 13, 14,
+	11, 5, -5,
 }
 var yyDef = []int{
 
-	3, -2, 1, 3, 0, 0, 2, 0, 6, 7,
-	8, 9, 10, 0, 0, 0, 0, 12, 13, 14,
-	0, 4, 11, 0, 0, 15, 5,
+	3, -2, 1, 3, 4, 5, 0, 0, 2, 0,
+	8, 9, 10, 11, 12, 0, 0, 0, 0, 0,
+	14, 15, 16, 17, 0, 19, 20, 6, 13, 0,
+	0, 18, 7,
 }
 var yyTok1 = []int{
 
@@ -99,16 +114,16 @@ var yyTok1 = []int{
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 12, 9, 3, 3, 3, 3, 3,
+	3, 3, 3, 14, 11, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 10, 3, 11,
+	3, 12, 3, 13,
 }
 var yyTok2 = []int{
 
-	2, 3, 4, 5, 6, 7, 8,
+	2, 3, 4, 5, 6, 7, 8, 9, 10,
 }
 var yyTok3 = []int{
 	0,
@@ -339,7 +354,7 @@ yydefault:
 	switch yynt {
 
 	case 1:
-		//line dcpuAssembly.y:40
+		//line dcpuAssembly.y:49
 		{
 		if lexer, ok := yylex.(*DCPULex) ; ok {
 			lexer.hack.ast = DcpuProgram{expressions: yyS[yypt-0].exprlst}
@@ -348,7 +363,7 @@ yydefault:
 		}
 	}
 	case 2:
-		//line dcpuAssembly.y:49
+		//line dcpuAssembly.y:58
 		{
 		if lexer, ok := yylex.(*DCPULex) ; ok {
 			var expr DcpuExpression = yyS[yypt-1].expr
@@ -362,89 +377,129 @@ yydefault:
 		}
 	}
 	case 3:
-		//line dcpuAssembly.y:63
+		//line dcpuAssembly.y:72
 		{
 		yyVAL.exprlst = []DcpuExpression{}
 	}
 	case 4:
-		//line dcpuAssembly.y:68
+		//line dcpuAssembly.y:77
 		{
-		expr := new(DcpuExpression)
+		yyVAL.expr = yyS[yypt-0].nexpr
+	}
+	case 5:
+		//line dcpuAssembly.y:82
+		{
+		yyVAL.expr = yyS[yypt-0].dexpr
+	}
+	case 6:
+		//line dcpuAssembly.y:88
+		{
+		expr := new(DcpuNormalExpression)
 		expr.inst = yyS[yypt-3].inst
 		expr.a = yyS[yypt-2].operand
 		expr.b = yyS[yypt-0].operand
 		expr.label = ""
-		yyVAL.expr = *expr
+		yyVAL.nexpr = *expr
 	}
-	case 5:
-		//line dcpuAssembly.y:78
+	case 7:
+		//line dcpuAssembly.y:98
 		{
-		expr := new(DcpuExpression)
+		expr := new(DcpuNormalExpression)
 		expr.inst = yyS[yypt-3].inst
 		expr.a = yyS[yypt-2].operand
 		expr.b = yyS[yypt-0].operand
 		expr.label = yyS[yypt-4].lab
-		yyVAL.expr = *expr
-	
+		yyVAL.nexpr = *expr
 	}
-	case 6:
-		//line dcpuAssembly.y:89
+	case 8:
+		//line dcpuAssembly.y:108
 		{
 		yyVAL.operand = DcpuRegister(yyS[yypt-0].reg)
 	}
-	case 7:
-		//line dcpuAssembly.y:94
+	case 9:
+		//line dcpuAssembly.y:113
 		{
 		yyVAL.operand = DcpuSpecialRegister(yyS[yypt-0].specialReg)
 	}
-	case 8:
-		//line dcpuAssembly.y:99
+	case 10:
+		//line dcpuAssembly.y:118
 		{
 		yyVAL.operand = yyS[yypt-0].ref
 	}
-	case 9:
-		//line dcpuAssembly.y:103
+	case 11:
+		//line dcpuAssembly.y:122
 		{
 		yyVAL.operand = DcpuLitteral(yyS[yypt-0].lit)
 	}
-	case 10:
-		//line dcpuAssembly.y:107
+	case 12:
+		//line dcpuAssembly.y:126
 		{
 		yyVAL.operand = DcpuLabel(yyS[yypt-0].lab)
 	}
-	case 11:
-		//line dcpuAssembly.y:112
+	case 13:
+		//line dcpuAssembly.y:131
 		{
 		yyVAL.ref = yyS[yypt-1].ref
 	}
-	case 12:
-		//line dcpuAssembly.y:117
+	case 14:
+		//line dcpuAssembly.y:136
 		{
 		reference := new (DcpuReference)
 		reference.ref = yyS[yypt-0].reg
 		yyVAL.ref = *reference
 	}
-	case 13:
-		//line dcpuAssembly.y:123
+	case 15:
+		//line dcpuAssembly.y:142
 		{
 		reference := new (DcpuReference)
 		reference.ref = yyS[yypt-0].sum
 		yyVAL.ref = *reference
 	}
-	case 14:
-		//line dcpuAssembly.y:129
+	case 16:
+		//line dcpuAssembly.y:148
 		{
 		reference := new (DcpuReference)
 		reference.ref = yyS[yypt-0].lit
 		yyVAL.ref = *reference
 	}
-	case 15:
-		//line dcpuAssembly.y:135
+	case 17:
+		//line dcpuAssembly.y:154
+		{
+		reference := new (DcpuReference)
+		reference.ref = yyS[yypt-0].lab
+		yyVAL.ref = *reference
+	}
+	case 18:
+		//line dcpuAssembly.y:161
 		{
 		sum := new(DcpuSum)
 		sum.lit = yyS[yypt-2].lit
 		sum.reg = yyS[yypt-0].reg
 		yyVAL.sum = *sum
+	}
+	case 19:
+		//line dcpuAssembly.y:169
+		{
+		expr := new(DcpuDataExpression)
+		expr.data = []dcpu.Word{dcpu.Word(yyS[yypt-0].lit)}
+		expr.label = yyS[yypt-2].lab
+		yyVAL.dexpr = *expr
+	}
+	case 20:
+		//line dcpuAssembly.y:177
+		{
+		expr := new(DcpuDataExpression)
+		//expr.data = []dcpu.Word([]byte(string(label)))
+
+		str := yyS[yypt-0].str
+		data := []dcpu.Word{}
+		for _,char := range str {
+			data = append(data, dcpu.Word(char))
+		}
+		expr.data = data
+		
+		expr.label = yyS[yypt-2].lab
+		yyVAL.dexpr = *expr
 	}
 	}
 	goto yystack /* stack new state and value */

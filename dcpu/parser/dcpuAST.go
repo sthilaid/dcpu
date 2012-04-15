@@ -30,9 +30,9 @@ func (prog *DcpuProgram)processLabels() {
 		changed = false
 		currentSize = 0
 		for _, expr := range prog.expressions {
-			if expr.label != "" {
-				previousValue := prog.labels[expr.label]
-				prog.labels[expr.label] = currentSize
+			if label := expr.Label() ; label != "" {
+				previousValue := prog.labels[label]
+				prog.labels[label] = currentSize
 				if previousValue != currentSize {
 					changed = true
 				}
@@ -82,14 +82,26 @@ func (prog *DcpuProgram)IsEqualTo(prog1 DcpuProgram) (bool, string) {
 // Expression description
 //-----------------------
 
-type DcpuExpression struct {
+type DcpuExpression interface {
+	Code(prog DcpuProgram) []dcpu.Word
+	Size(prog DcpuProgram) byte
+	String() string
+	IsEqualTo(expr1 DcpuComparable) (bool, string)
+	Label() DcpuLabel
+}
+
+type DcpuNormalExpression struct {
 	inst DcpuInstruction
 	a DcpuOperand
 	b DcpuOperand
 	label DcpuLabel
 }
 
-func (exp DcpuExpression)Code(prog DcpuProgram) []dcpu.Word {
+func (exp DcpuNormalExpression)Label() DcpuLabel {
+	return exp.label
+}
+
+func (exp DcpuNormalExpression)Code(prog DcpuProgram) []dcpu.Word {
 	opCode := exp.inst.Code()
 	a := exp.a.Code(prog)
 	b := exp.b.Code(prog)
@@ -100,16 +112,18 @@ func (exp DcpuExpression)Code(prog DcpuProgram) []dcpu.Word {
 	return append(intermediateResult, b[1:]...)
 }
 
-func (exp DcpuExpression)Size(prog DcpuProgram) byte {
+func (exp DcpuNormalExpression)Size(prog DcpuProgram) byte {
 	return byte(1) + exp.a.Size(prog) + exp.b.Size(prog)
 }
 
-func (exp DcpuExpression)String() string {
+func (exp DcpuNormalExpression)String() string {
 	return string(exp.inst) +" "+ exp.a.String() +", "+ exp.b.String()
 }
 
-func (expr DcpuExpression)IsEqualTo(expr1 DcpuExpression) (bool, string) {
-	if (expr.inst != expr1.inst) {
+func (expr DcpuNormalExpression)IsEqualTo(op DcpuComparable) (bool, string) {
+	if expr1, ok := op.(DcpuNormalExpression) ; !ok {
+		return false, fmt.Sprintf("different types of operands (%s, %s)", expr, op)
+	} else if expr.inst != expr1.inst {
 		return false, fmt.Sprintf("Instructions are different (%s, %s)", expr.inst, expr1.inst)
 	} else if equal, str := expr.a.IsEqualTo(expr1.a) ; !equal {
 		return false, fmt.Sprintf("'a' operands are different (%s)", str)
@@ -360,7 +374,6 @@ type DcpuLabel string
 
 func (label DcpuLabel)Code(prog DcpuProgram) []dcpu.Word {
 	value := prog.labels[label]
-	fmt.Printf("label value: 0x%x\n", value)
 	lit := DcpuLitteral(value)
 	return lit.Code(prog)
 }
@@ -369,6 +382,18 @@ func (label DcpuLabel)Size(prog DcpuProgram) byte {
 	value := prog.labels[label]
 	lit := DcpuLitteral(value)
 	return lit.Size(prog)
+}
+
+func (label DcpuLabel)ReferenceCode(prog DcpuProgram) []dcpu.Word {
+	value := prog.labels[label]
+	lit := DcpuLitteral(value)
+	return lit.ReferenceCode(prog)
+}
+
+func (label DcpuLabel)ReferenceSize(prog DcpuProgram) byte {
+	value := prog.labels[label]
+	lit := DcpuLitteral(value)
+	return lit.ReferenceSize(prog)
 }
 
 func (label DcpuLabel)String() string {
@@ -381,5 +406,47 @@ func (label DcpuLabel)IsEqualTo(op DcpuComparable) (bool,string) {
 	} else if label != label1 {
 		return false, fmt.Sprintf("different labels (%s, %s)", label, label1)
 	}
+	return true, ""
+}
+
+//--------------------------------
+// data node description
+//--------------------------------
+
+type DcpuDataExpression struct {
+	label DcpuLabel
+	data []dcpu.Word
+}
+
+func (data DcpuDataExpression)Label() DcpuLabel {
+	return DcpuLabel(data.label)
+}
+
+func (data DcpuDataExpression)Code(prog DcpuProgram) []dcpu.Word {
+	return data.data
+}
+
+func (data DcpuDataExpression)Size(prog DcpuProgram) byte {
+	return byte(len(data.data))
+}
+
+func (data DcpuDataExpression)String() string {
+	return fmt.Sprintf("%s", data.data) // todo?
+}
+
+func (data DcpuDataExpression)IsEqualTo(op DcpuComparable) (bool,string) {
+	if data1, ok := op.(DcpuDataExpression) ; !ok {
+		return false, fmt.Sprintf("different types of operands (%s, %s)", data, op)
+	} else if size, size1 := len(data.data), len(data1.data) ; size != size1 {
+		return false, fmt.Sprintf("data don't have same size (%d, %d)", size, size1)
+	} else {
+		for i, dataValue := range data.data {
+			if dataValue1 := data1.data[i] ; dataValue != dataValue1 {
+				return false, fmt.Sprintf("data %d element are different (0x%x != 0x%x)",
+					                  dataValue, dataValue1)
+			}
+		}
+	}
+
 	return true, ""
 }
