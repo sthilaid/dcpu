@@ -59,10 +59,19 @@ expressionList: expression expressionList
 	if lexer, ok := yylex.(*DCPULex) ; ok {
 		var expr DcpuExpression = $1
 		var list []DcpuExpression = $2
-		// here, since the regular expression solving will
-		// match the last expressions first, we must append at
-		// the begginning of the slice ;p
-		$$ = append([]DcpuExpression{expr}, list...)
+
+		if _, ok := expr.(DcpuDataExpression) ; ok {
+			// data expression should be appended *at the
+			// end of the code segment*
+			$$ = append(list, expr)
+		} else {
+			// here, since the regular expression solving will
+			// match the last expressions first, we must append at
+			// the begginning of the slice ;p
+			$$ = append([]DcpuExpression{expr}, list...)
+		}
+		
+		
 	} else {
 		panic(fmt.Sprintf("unexected lexer type, got: %s", reflect.TypeOf(lexer)))
 	}

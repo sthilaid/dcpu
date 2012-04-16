@@ -307,14 +307,14 @@ func TestBinary6(t *testing.T) {
 	}
 }
 
-// func TestBinary7(t *testing.T) {
-// 	lex := new(DCPULex)
-// 	lex.Init("SET PC, next MUL SP, 0x1 :next XOR A, B")
-// 	yyParse(lex)
-// 	code := lex.hack.ast.Code()
-// 	expectedCode := []dcpu.Word{0x89c1, 0x85b4, 0x040b}
+func TestBinary7(t *testing.T) {
+	lex := new(DCPULex)
+	lex.Init(":message DAT 'hello' SET I, message SET A, [0x1+I]")
+	yyParse(lex)
+	code := lex.hack.ast.Code()
+	expectedCode := []dcpu.Word{0x8c61, 0x5801, 0x1, 0x68, 0x65, 0x6c, 0x6c, 0x6f}
 
-// 	if !compareBinaries(code, expectedCode) {
-// 		t.Errorf("Binaries does not correspond, got %s expcted %s", dump(&code), dump(&expectedCode))
-// 	}
-// }
+	if !compareBinaries(code, expectedCode) {
+		t.Errorf("Binaries does not correspond, got %s expcted %s", dump(&code), dump(&expectedCode))
+	}
+}

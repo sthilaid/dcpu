@@ -368,31 +368,40 @@ yydefault:
 		if lexer, ok := yylex.(*DCPULex) ; ok {
 			var expr DcpuExpression = yyS[yypt-1].expr
 			var list []DcpuExpression = yyS[yypt-0].exprlst
-			// here, since the regular expression solving will
-		// match the last expressions first, we must append at
-		// the begginning of the slice ;p
-		yyVAL.exprlst = append([]DcpuExpression{expr}, list...)
+	
+			if _, ok := expr.(DcpuDataExpression) ; ok {
+				// data expression should be appended *at the
+			// end of the code segment*
+			yyVAL.exprlst = append(list, expr)
+			} else {
+				// here, since the regular expression solving will
+			// match the last expressions first, we must append at
+			// the begginning of the slice ;p
+			yyVAL.exprlst = append([]DcpuExpression{expr}, list...)
+			}
+			
+			
 		} else {
 			panic(fmt.Sprintf("unexected lexer type, got: %s", reflect.TypeOf(lexer)))
 		}
 	}
 	case 3:
-		//line dcpuAssembly.y:72
+		//line dcpuAssembly.y:81
 		{
 		yyVAL.exprlst = []DcpuExpression{}
 	}
 	case 4:
-		//line dcpuAssembly.y:77
+		//line dcpuAssembly.y:86
 		{
 		yyVAL.expr = yyS[yypt-0].nexpr
 	}
 	case 5:
-		//line dcpuAssembly.y:82
+		//line dcpuAssembly.y:91
 		{
 		yyVAL.expr = yyS[yypt-0].dexpr
 	}
 	case 6:
-		//line dcpuAssembly.y:88
+		//line dcpuAssembly.y:97
 		{
 		expr := new(DcpuNormalExpression)
 		expr.inst = yyS[yypt-3].inst
@@ -402,7 +411,7 @@ yydefault:
 		yyVAL.nexpr = *expr
 	}
 	case 7:
-		//line dcpuAssembly.y:98
+		//line dcpuAssembly.y:107
 		{
 		expr := new(DcpuNormalExpression)
 		expr.inst = yyS[yypt-3].inst
@@ -412,65 +421,65 @@ yydefault:
 		yyVAL.nexpr = *expr
 	}
 	case 8:
-		//line dcpuAssembly.y:108
+		//line dcpuAssembly.y:117
 		{
 		yyVAL.operand = DcpuRegister(yyS[yypt-0].reg)
 	}
 	case 9:
-		//line dcpuAssembly.y:113
+		//line dcpuAssembly.y:122
 		{
 		yyVAL.operand = DcpuSpecialRegister(yyS[yypt-0].specialReg)
 	}
 	case 10:
-		//line dcpuAssembly.y:118
+		//line dcpuAssembly.y:127
 		{
 		yyVAL.operand = yyS[yypt-0].ref
 	}
 	case 11:
-		//line dcpuAssembly.y:122
+		//line dcpuAssembly.y:131
 		{
 		yyVAL.operand = DcpuLitteral(yyS[yypt-0].lit)
 	}
 	case 12:
-		//line dcpuAssembly.y:126
+		//line dcpuAssembly.y:135
 		{
 		yyVAL.operand = DcpuLabel(yyS[yypt-0].lab)
 	}
 	case 13:
-		//line dcpuAssembly.y:131
+		//line dcpuAssembly.y:140
 		{
 		yyVAL.ref = yyS[yypt-1].ref
 	}
 	case 14:
-		//line dcpuAssembly.y:136
+		//line dcpuAssembly.y:145
 		{
 		reference := new (DcpuReference)
 		reference.ref = yyS[yypt-0].reg
 		yyVAL.ref = *reference
 	}
 	case 15:
-		//line dcpuAssembly.y:142
+		//line dcpuAssembly.y:151
 		{
 		reference := new (DcpuReference)
 		reference.ref = yyS[yypt-0].sum
 		yyVAL.ref = *reference
 	}
 	case 16:
-		//line dcpuAssembly.y:148
+		//line dcpuAssembly.y:157
 		{
 		reference := new (DcpuReference)
 		reference.ref = yyS[yypt-0].lit
 		yyVAL.ref = *reference
 	}
 	case 17:
-		//line dcpuAssembly.y:154
+		//line dcpuAssembly.y:163
 		{
 		reference := new (DcpuReference)
 		reference.ref = yyS[yypt-0].lab
 		yyVAL.ref = *reference
 	}
 	case 18:
-		//line dcpuAssembly.y:161
+		//line dcpuAssembly.y:170
 		{
 		sum := new(DcpuSum)
 		sum.lit = yyS[yypt-2].lit
@@ -478,7 +487,7 @@ yydefault:
 		yyVAL.sum = *sum
 	}
 	case 19:
-		//line dcpuAssembly.y:169
+		//line dcpuAssembly.y:178
 		{
 		expr := new(DcpuDataExpression)
 		expr.data = []dcpu.Word{dcpu.Word(yyS[yypt-0].lit)}
@@ -486,7 +495,7 @@ yydefault:
 		yyVAL.dexpr = *expr
 	}
 	case 20:
-		//line dcpuAssembly.y:177
+		//line dcpuAssembly.y:186
 		{
 		expr := new(DcpuDataExpression)
 		//expr.data = []dcpu.Word([]byte(string(label)))
