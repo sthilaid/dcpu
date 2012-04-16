@@ -1,6 +1,7 @@
 package parser
 
 import "fmt"
+import "strings"
 import "strconv"
 
 var debugActivated bool = false
@@ -37,7 +38,7 @@ type DCPULex struct {
 
 func (lex *DCPULex)Init(code string) {
 	lex.hack = new(DCPULexHack)
-	lex.hack.code = code
+	lex.hack.code = code // case insensitive
 	lex.hack.ast = DcpuProgram{expressions: []DcpuExpression{}}
 	lex.nextLetter()
 }
@@ -71,7 +72,9 @@ func (lex *DCPULex) findSym(yylval *yySymType) int {
 
 	debugf("symbol: %s\n", symbol)
 
-	switch symbol {
+	upperSym := strings.ToUpper(symbol)
+
+	switch upperSym {
 	case "A": fallthrough
 	case "B": fallthrough
 	case "C": fallthrough
@@ -80,8 +83,8 @@ func (lex *DCPULex) findSym(yylval *yySymType) int {
 	case "Z": fallthrough
 	case "I": fallthrough
 	case "J": 
-		yylval.reg = DcpuRegister(symbol)
-		debugf("lex: found register %s\n", symbol)
+		yylval.reg = DcpuRegister(upperSym)
+		debugf("lex: found register %s\n", upperSym)
 		return register
 	case "SET": fallthrough
 	case "ADD": fallthrough
@@ -98,8 +101,8 @@ func (lex *DCPULex) findSym(yylval *yySymType) int {
 	case "IFN": fallthrough
 	case "IFG": fallthrough
 	case "IFB":
-		yylval.inst = DcpuInstruction(symbol)
-		debugf("lex: found instruction %s\n", symbol)
+		yylval.inst = DcpuInstruction(upperSym)
+		debugf("lex: found instruction %s\n", upperSym)
 		return instruction
 	case "POP": fallthrough
 	case "PEEK": fallthrough
@@ -107,8 +110,8 @@ func (lex *DCPULex) findSym(yylval *yySymType) int {
 	case "SP": fallthrough
 	case "PC": fallthrough
 	case "O":
-		yylval.specialReg = DcpuSpecialRegister(symbol)
-		debugf("lex: found special register %s\n", symbol)
+		yylval.specialReg = DcpuSpecialRegister(upperSym)
+		debugf("lex: found special register %s\n", upperSym)
 		return specialRegister
 
 	case "DAT":
@@ -171,7 +174,8 @@ func (lex *DCPULex) findString(yylval *yySymType) int {
 
 	// clear the delimiter
 	lex.nextLetter()
-	
+
+	strDat = string(append([]byte(strDat), byte(0x0)))
 	yylval.str = strDat
 	debugf("lex: found string \"%s\"\n", strDat)
 	return stringData

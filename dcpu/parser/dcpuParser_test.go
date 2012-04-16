@@ -129,7 +129,7 @@ func TestParsing7(t *testing.T) {
 	lex.Init(":dat DAT \"toto\"")
 	yyParse(lex)
 	expr0 := DcpuDataExpression{label: "dat",
-	                            data: []dcpu.Word{0x74, 0x6f, 0x74, 0x6f},
+		                    data: []dcpu.Word{0x74, 0x6f, 0x74, 0x6f, 0x0},
 	}
 
 	program := DcpuProgram{expressions: []DcpuExpression{expr0}}
@@ -222,6 +222,7 @@ func dump(mem *[]dcpu.Word) string {
 }
 
 
+// simple instruction
 func TestBinary0(t *testing.T) {
 	lex := new(DCPULex)
 	lex.Init("SET A, 0x30")
@@ -235,6 +236,7 @@ func TestBinary0(t *testing.T) {
 	}
 }
 
+// register ref and next word ref
 func TestBinary1(t *testing.T) {
 	lex := new(DCPULex)
 	lex.Init("ADD [X], [0x1]")
@@ -247,6 +249,7 @@ func TestBinary1(t *testing.T) {
 	}
 }
 
+// indirect dereferencing
 func TestBinary2(t *testing.T) {
 	lex := new(DCPULex)
 	lex.Init("BOR [0xab +I], [0x1]")
@@ -259,6 +262,7 @@ func TestBinary2(t *testing.T) {
 	}
 }
 
+// special registers
 func TestBinary3(t *testing.T) {
 	lex := new(DCPULex)
 	lex.Init("SET PC, 0x0")
@@ -271,6 +275,7 @@ func TestBinary3(t *testing.T) {
 	}
 }
 
+// more complex 2 instruction program
 func TestBinary4(t *testing.T) {
 	lex := new(DCPULex)
 	lex.Init("SET PUSH, 0x10 ADD PEEK, 0x1")
@@ -283,6 +288,7 @@ func TestBinary4(t *testing.T) {
 	}
 }
 
+// label
 func TestBinary5(t *testing.T) {
 	lex := new(DCPULex)
 	lex.Init(":loop SET PC, loop")
@@ -295,9 +301,11 @@ func TestBinary5(t *testing.T) {
 	}
 }
 
+// testing ref to label
+// note: also testing upper and lower case code parsing...
 func TestBinary6(t *testing.T) {
 	lex := new(DCPULex)
-	lex.Init("SET PC, next MUL SP, 0x1 :next XOR A, B")
+	lex.Init("set pc, next MUL sP, 0x1 :next xOr a, B")
 	yyParse(lex)
 	code := lex.hack.ast.Code()
 	expectedCode := []dcpu.Word{0x89c1, 0x85b4, 0x040b}
@@ -307,12 +315,14 @@ func TestBinary6(t *testing.T) {
 	}
 }
 
+// code using 'dat', making sure that the data is at the end of the
+// code and that the labels are set correctly
 func TestBinary7(t *testing.T) {
 	lex := new(DCPULex)
 	lex.Init(":message DAT 'hello' SET I, message SET A, [0x1+I]")
 	yyParse(lex)
 	code := lex.hack.ast.Code()
-	expectedCode := []dcpu.Word{0x8c61, 0x5801, 0x1, 0x68, 0x65, 0x6c, 0x6c, 0x6f}
+	expectedCode := []dcpu.Word{0x8c61, 0x5801, 0x1, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x0}
 
 	if !compareBinaries(code, expectedCode) {
 		t.Errorf("Binaries does not correspond, got %s expcted %s", dump(&code), dump(&expectedCode))
